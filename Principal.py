@@ -1,80 +1,54 @@
 # -*- coding: utf-8 -*-
-import numpy as np
-from scipy import signal
-import matplotlib.pyplot as plt
 
-# Dados do Problema
-Wp = 1000
-Ap = -1
-Ws = 5000
-As = -40
+from Funcoes import *
 
-# Constante de Proporcionalidade
-e = np.sqrt(pow(10, (-0.1*Ap)) - 1)
-print(f'e = {e:.5f}')
+# Boas Vindas
+print("\nBem Vindo(a)!\n\n")
+print("Tipos de Filtros: Passa-Baixa (PB) ou Passa-Alta (PA)")
 
-# Ordem do Filtro
-N = np.arccosh(np.sqrt(pow(10, (-0.1*As)) - 1) / e) / np.arccosh(Ws/Wp)
-print(f'n = {N:.5f}')
-N = int(np.ceil(N))
-print("N =", N)
+# Pega o tipo de filtro e os pontos de projeto
+tipo = input("Digite o tipo que deseja: ")
+print("\nAgora vamos aos Pontos de Projeto ... ")
+Wp = float(input("Digite a Frequência de Passagem (Wp): "))
+Ws = float(input("Digite a Frequência de Rejeição (Ws): "))
+Ap = float(input("Digite a Atenuação de Passagem (Ap): "))
+As = float(input("Digite a Atenuação de Rejeição (As): "))
 
-# Frequência de Corte
-Wc = Wp * np.cosh( (1/N) * np.arccosh(1/e) )
-print(f'Wc = {Wc:.5f}')
+# Inicializa um Objeto da Classe Butterworth
+filtro = chebyshev(tipo, Wp, Ws, Ap, As)
 
-# Polos do Sistema
-Sk = list()
-Ok = list()
-Wk = list()
-for k in range(1, N+1):
-    Ok.append(-np.sinh((1/N) * np.arcsinh(1/e) ) * np.sin(np.pi/(2*N)*(2*k - 1)))
-    Wk.append(np.cosh((1/N) * np.arcsinh(1/e) ) * np.cos(np.pi/(2*N)*(2*k - 1)))
-    Sk.append(complex(Ok[k-1], Wk[k-1]))
-print("Sk =", Sk)
- 
-# Polinômio do Denominador
-poli = np.poly(Sk)
-coef = poli.real
+# Define e exibe a Constante de Proporcionalidade
+e = filtro.constProp()
+print("--------------------------------------------------------------------")
+print("Seu filtro possui Constante (e):", e)
+print("--------------------------------------------------------------------")
 
-# Função de Transferência
-D = list()
-if N % 2 != 0:
-    aux = 0
-    for i in range(-N, 1):
-        D.append(coef[aux]*pow(Wp, i))
-        aux = aux + 1
-    H = signal.TransferFunction(D[-1], D)
-    
+# Define e exibe ordem do filtro
+n, N = filtro.ordem()
+print("--------------------------------------------------------------------")
+print("Seu filtro possui a ordem (N):", N, "(", n, ")")
+print("--------------------------------------------------------------------")
+
+# Define e exibe frequência de corte
+Wc = filtro.freq_corte()
+print("--------------------------------------------------------------------")
+print("Seu filtro possui frequência de Corte (Wc):", Wc)
+print("--------------------------------------------------------------------")
+
+# Define e exibe Função de Transferência
+H = filtro.func_tranf()
+print("--------------------------------------------------------------------")
+print("Sua Função de Transferência H(s) é:")
+print(H)
+print("--------------------------------------------------------------------")
+
+# Plotar Gráficos
+print("Deseja Plotar os gráficos de Bode?")
+resposta = input("'s' ou 'n' (sem aspas): ")
+if resposta == 's':
+    filtro.plotar()
+elif resposta == 'n':
+    print("Gráfico não iniciado!")
 else:
-    aux = np.sqrt(1 + e**2)
-    H = signal.TransferFunction(D[-1], D)
-print("H =", H)
-
- # Plotagem do Módulo
-w, y, phase = signal.bode(H)
-plt.figure(1)
-plt.grid(True)
-plt.xlim(0, 1000)
-plt.ylim(-5, 0)
-plt.plot(w, y)
-
-# Plotagem da Fase
-plt.figure(2)
-plt.grid(True)
-plt.xlim(0, 6000)
-plt.ylim(-300, 0)
-plt.plot(w, phase, 'r')
-
-
-
-
-
-
-
-
-
-
-
-
-
+    print("Resposta não identificada.")
+print("--------------------------------------------------------------------\n")
