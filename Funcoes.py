@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 #Importa Bibliotecas Necessárias
-from math import log10, pi, sin, cos, ceil
 from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,12 +9,17 @@ import numpy as np
 class chebyshev:
     
     # Iniciação do Objeto e seus parâmetros
-    def __init__(self, tipo, Wp, Ws, Ap, As):
+    def __init__(self, tipo, Wp, Ws, Ap, As, Wp2 = 0, Ws2 = 0):
         self.tipo = tipo
         self.Wp = Wp
         self.Ws = Ws
         self.Ap = Ap
         self.As = As
+        if tipo == "PF" or tipo == "RF":
+            self.Wp1 = Wp
+            self.Wp2 = Wp2
+            self.Ws1 = Ws
+            self.Ws2 = Ws2
         
     
     # Constante de Proporcionalidade
@@ -25,6 +29,14 @@ class chebyshev:
         return e
     
     
+    # Bandas de Passagem
+    def bandas(self):
+        Bp = self.Wp2 - self.Wp1
+        Bs = self.Ws2 - self.Ws1
+        self.Bs = Bs
+        self.Bp = Bp
+        return Bp, Bs
+    
     # Essa função define e retorna a ordem do filtro
     def ordem(self):
         if self.tipo == "PB":
@@ -33,7 +45,10 @@ class chebyshev:
         elif self.tipo == "PA":
             n = np.arccosh(np.sqrt(pow(10, (-0.1*self.As)) - 1) / self.e
                            ) / np.arccosh(self.Wp/self.Ws)
-        N = ceil(n)
+        elif self.tipo == "PF":
+            n = np.arccosh(np.sqrt(pow(10, (-0.1*self.As)) - 1) / self.e
+                           ) / np.arccosh(self.Bs/self.Bp)
+        N = int(np.ceil(n))
         self.N = N
         return n, N
     
@@ -44,6 +59,12 @@ class chebyshev:
         self.Wc = Wc
         return Wc
     
+    
+    # Frequência de Ressonância
+    def freq_ress(self):
+        Wo = np.sqrt(self.Wp1*self.Wp2)
+        self.Wo = Wo
+        return Wo
     
     # Essa função define e retorna as raízes do denominador da FT
     def raizes_unit(self):
@@ -66,54 +87,51 @@ class chebyshev:
         poli = np.poly(self.Sk)
         coef = poli.real
         D = list()
-        
-        # Para um Passa Baixa
-        if self.tipo == "PB":
-            aux = 0
-            for i in range(-self.N, 1):
-                D.append(coef[aux]*pow(self.Wp, i))
-                aux = aux + 1
-            if self.N % 2 != 0:
+        aux = 0
+        for i in range(-self.N, 1):
+            D.append(coef[aux]*pow(self.Wp, i))
+            aux = aux + 1
+            
+        if self.N % 2 != 0:
+            if self.tipo == "PB":
+                num, den = signal.lp2lp(coef[-1], coef, self.Wp)
                 H = signal.TransferFunction(D[-1], D)
-            else:
-                aux = np.sqrt(1 + self.e**2)
-                H = signal.TransferFunction(D[-1] * aux, D)
-        
-        # Para um Passa Alta
-        elif self.tipo == "PA":
-            den = list()
-            aux = self.N
-            for i in range(0, self.N+1):
-                D.append(coef[aux]*pow(self.Wp, i))
-                aux = aux - 1
-                if i == 0:
-                    den.append(D[0])
-                else:
-                    den.append(0) 
-            if self.N % 2 != 0:
-                H = signal.TransferFunction(den, D)
-            else:
-                aux = np.sqrt(1 + self.e**2)
-                H = signal.TransferFunction(den * aux, D)
-        
+            elif self.tipo == "PA":
+                num, den = signal.lp2hp(coef[-1], coef, self.Wp)
+                H = signal.TransferFunction(num, den)
+            elif self.tipo == "PF":
+                num, den = signal.lp2bp(coef[-1], coef, self.Wp, self.Bp)
+                H = signal.TransferFunction(num, den)
+        else:
+            aux = 1 / np.sqrt(1 + self.e**2)
+            if self.tipo == "PB":
+                num, den = signal.lp2lp(coef[-1], coef, self.Wp)
+                H = signal.TransferFunction(num * aux, den)
+            elif self.tipo == "PA":
+                num, den = signal.lp2hp(coef[-1], coef, self.Wp)
+                H = signal.TransferFunction(num * aux, den)
+            elif self.tipo == "PF":
+                num, den = signal.lp2bp(coef[-1], coef, self.Wo, self.Bp)
+                H = signal.TransferFunction(num * aux, den)
         self.H = H
         return H
+    
     
     # Essa função plota o Diagrama de Bode
     def plotar(self):
         # Plotagem do Módulo
-        w, y, phase = signal.bode(self.H)
+        w, y, phase = self.H.bode(w = np.arange(0, 15000, step = 1))
         plt.figure(1)
         plt.grid(True)
-        plt.xlim(0, 15000)
-        plt.ylim(-50, 0)
+        plt.xlim(0, 12000)
+        plt.ylim(-50, 2)
         plt.plot(w, y)
         
         # Plotagem da Fase
         plt.figure(2)
         plt.grid(True)
         plt.xlim(0, 6000)
-        plt.ylim(-300, 0)
+        plt.ylim(-360, 0)
         plt.plot(w, phase, 'r')
     
     
