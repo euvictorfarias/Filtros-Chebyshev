@@ -59,9 +59,16 @@ class chebyshev:
     
     # Essa função define e retorna a frequência de corte do filtro
     def freq_corte(self):
-        Wc = self.Wp * np.cosh( (1/self.N) * np.arccosh(1/self.e) )
-        self.Wc = Wc
-        return Wc
+        if self.tipo == "PB" or self.tipo == "PA":
+            Wc = self.Wp * np.cosh( (1/self.N) * np.arccosh(1/self.e) )
+            self.Wc = Wc
+            return Wc
+        elif self.tipo == "PF" or self.tipo == "RF":
+            Wc1 = self.Wp1 * np.cosh( (1/self.N) * np.arccosh(1/self.e) )
+            Wc2 = self.Wp2 * np.cosh( (1/self.N) * np.arccosh(1/self.e) )
+            self.Wc1 = Wc1
+            self.Wc2 = Wc2
+            return Wc1, Wc2
     
     
     # Frequência de Ressonância
@@ -142,7 +149,7 @@ class chebyshev:
         plt.figure(1)
         plt.grid(True)
         plt.xlim(0, 12000)
-        plt.ylim(-50, 2)
+        plt.ylim(-70, 0)
         plt.plot(w, y)
         
         # Plotagem da Fase
