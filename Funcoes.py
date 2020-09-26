@@ -9,16 +9,16 @@ import numpy as np
 class chebyshev:
     
     # Iniciação do Objeto e seus parâmetros
-    def __init__(self, tipo, Wp, Ws, Ap, As, Wp2 = 0, Ws2 = 0):
+    def __init__(self, tipo, Wp1, Ws1, Ap, As, Wp2 = 0, Ws2 = 0):
         self.tipo = tipo
-        self.Wp = Wp
-        self.Ws = Ws
+        self.Wp = Wp1
+        self.Ws = Ws1
         self.Ap = Ap
         self.As = As
         if tipo == "PF" or tipo == "RF":
-            self.Wp1 = Wp
+            self.Wp1 = Wp1
             self.Wp2 = Wp2
-            self.Ws1 = Ws
+            self.Ws1 = Ws1
             self.Ws2 = Ws2
         
     
@@ -37,6 +37,7 @@ class chebyshev:
         self.Bp = Bp
         return Bp, Bs
     
+    
     # Essa função define e retorna a ordem do filtro
     def ordem(self):
         if self.tipo == "PB":
@@ -48,6 +49,9 @@ class chebyshev:
         elif self.tipo == "PF":
             n = np.arccosh(np.sqrt(pow(10, (-0.1*self.As)) - 1) / self.e
                            ) / np.arccosh(self.Bs/self.Bp)
+        elif self.tipo == "RF":
+            n = np.arccosh(np.sqrt(pow(10, (-0.1*self.As)) - 1) / self.e
+                           ) / np.arccosh(self.Bp/self.Bs)
         N = int(np.ceil(n))
         self.N = N
         return n, N
@@ -65,6 +69,7 @@ class chebyshev:
         Wo = np.sqrt(self.Wp1*self.Wp2)
         self.Wo = Wo
         return Wo
+    
     
     # Essa função define e retorna as raízes do denominador da FT
     def raizes_unit(self):
@@ -95,12 +100,15 @@ class chebyshev:
         if self.N % 2 != 0:
             if self.tipo == "PB":
                 num, den = signal.lp2lp(coef[-1], coef, self.Wp)
-                H = signal.TransferFunction(D[-1], D)
+                H = signal.TransferFunction(num[-1], den)
             elif self.tipo == "PA":
                 num, den = signal.lp2hp(coef[-1], coef, self.Wp)
                 H = signal.TransferFunction(num, den)
             elif self.tipo == "PF":
-                num, den = signal.lp2bp(coef[-1], coef, self.Wp, self.Bp)
+                num, den = signal.lp2bp(coef[-1], coef, self.Wo, self.Bp)
+                H = signal.TransferFunction(num, den)
+            elif self.tipo == "RF":
+                num, den = signal.lp2bs(coef[-1], coef, self.Wo, self.Bp)
                 H = signal.TransferFunction(num, den)
         else:
             aux = 1 / np.sqrt(1 + self.e**2)
@@ -113,9 +121,19 @@ class chebyshev:
             elif self.tipo == "PF":
                 num, den = signal.lp2bp(coef[-1], coef, self.Wo, self.Bp)
                 H = signal.TransferFunction(num * aux, den)
+            elif self.tipo == "RF":
+                num, den = signal.lp2bs(coef[-1], coef, self.Wo, self.Bp)
+                H = signal.TransferFunction(num * aux, den)
         self.H = H
         return H
     
+    
+    # Essa função organiza a FT para ser exibida
+    def org_FT(self):
+        razao = self.H.den[-1]
+        # Organiza o Numerador
+        # for i in range(0, len(self.H.num)):
+            
     
     # Essa função plota o Diagrama de Bode
     def plotar(self):

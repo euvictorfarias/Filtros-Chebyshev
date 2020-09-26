@@ -3,13 +3,15 @@
 from Funcoes import *
 
 # Boas Vindas
-print("\nBem Vindo(a)!\n\n")
+print("\nBem Vindo(a)!\n")
+print("--------------------------------------------------------------------")
 print("Tipos de Filtros:")
 print("(PB) - Passa-Baixa\n(PA) - Passa-Alta")
-print("(PF) - Passa-Faixa\n(RF) - Rejeita-Faixa [NÃO IMPLEMENTADO]")
+print("(PF) - Passa-Faixa\n(RF) - Rejeita-Faixa")
+print("--------------------------------------------------------------------")
 
 # Pega o tipo de filtro e os pontos de projeto
-tipo = input("Digite o tipo que deseja: ")
+tipo = input("Digite a SIGLA do tipo que deseja: ")
 print("\nAgora vamos aos Pontos de Projeto ... ")
 if tipo == "PB" or tipo == "PA":
     Wp = float(input("Digite a Frequência de Passagem (Wp): "))
@@ -17,9 +19,9 @@ if tipo == "PB" or tipo == "PA":
     Ap = float(input("Digite a Atenuação de Passagem (Ap): "))
     As = float(input("Digite a Atenuação de Rejeição (As): "))
 elif tipo == "PF" or tipo == "RF":
-    Wp = float(input("Digite a Frequência de Passagem (Wp1): "))
+    Wp1 = float(input("Digite a Frequência de Passagem (Wp1): "))
     Wp2 = float(input("Digite a Frequência de Passagem (Wp2): "))
-    Ws = float(input("Digite a Frequência de Rejeição (Ws1): "))
+    Ws1 = float(input("Digite a Frequência de Rejeição (Ws1): "))
     Ws2 = float(input("Digite a Frequência de Rejeição (Ws2): "))
     Ap = float(input("Digite a Atenuação de Passagem (Ap): "))
     As = float(input("Digite a Atenuação de Rejeição (As): "))
@@ -28,38 +30,37 @@ elif tipo == "PF" or tipo == "RF":
 if tipo == "PB" or tipo == "PA":
     filtro = chebyshev(tipo, Wp, Ws, Ap, As)
 elif tipo == "PF" or tipo == "RF":
-    filtro = chebyshev(tipo, Wp, Ws, Ap, As, Wp2, Ws2)
+    filtro = chebyshev(tipo, Wp1, Ws1, Ap, As, Wp2, Ws2)
+
+print("\n--------------------------------------------------------------------")
+print("As definições do seu filtro são as seguintes:")
+print("--------------------------------------------------------------------")
 
 # Define e exibe a Constante de Proporcionalidade
 e = filtro.constProp()
-print("--------------------------------------------------------------------")
-print("Seu filtro possui Constante (e):", e)
-print("--------------------------------------------------------------------")
+print(f'(e)  - Constante de Proporcionalidade: {e:.5f}')
 
 # Define e exibe frequência de ressonancia e bandas de passagem
 if tipo == "PF" or tipo == "RF":
     Wo = filtro.freq_ress()
-    print("--------------------------------------------------------------------")
-    print("Seu filtro possui frequência de Ressonância (Wo):", Wo)
-    print("--------------------------------------------------------------------")
+    print(f'(Wo) - Frequência de Ressonância: {Wo:.5f}')
     
     Bp, Bs = filtro.bandas()
-    print("--------------------------------------------------------------------")
-    print("Seu filtro possui Banda de Passagem (Bp):", Bp)
-    print("Seu filtro possui Banda de Rejeição (Bs):", Bs)
-    print("--------------------------------------------------------------------")
+    print(f'(Bp) - Banda de Passagem: {Bp:.5f}')
+    print(f'(Bs) - Banda de Rejeição: {Bs:.5f}')
 
 # Define e exibe ordem do filtro
 n, N = filtro.ordem()
-print("--------------------------------------------------------------------")
-print("Seu filtro possui a ordem (N):", N, "(", n, ")")
-print("--------------------------------------------------------------------")
+print(f'(N)  - Ordem: {N} ({n:.5f})')
 
 # Define e exibe frequência de corte
-Wc = filtro.freq_corte()
-print("--------------------------------------------------------------------")
-print("Seu filtro possui frequência de Corte (Wc):", Wc)
-print("--------------------------------------------------------------------")
+if tipo == "PB" or tipo == "PA":
+    Wc = filtro.freq_corte()
+    print(f'(Wc) - Frequência de Corte: {Wc:.5f}')
+elif tipo == "PF" or tipo == "RF":
+    Wc1, Wc2 = filtro.freq_corte()
+    print(f'(Wc1) - Frequência de Corte 1: {Wc1:.5f}')
+    print(f'(Wc2) - Frequência de Corte 2: {Wc2:.5f}')
     
 # Define e exibe Função de Transferência
 H = filtro.func_tranf()
